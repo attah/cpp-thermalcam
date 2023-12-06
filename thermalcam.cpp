@@ -43,7 +43,7 @@ int main(int argc, char** argv)
     imageData = fullFrame.rowRange(0, h);
     thermalData = fullFrame.rowRange(h, h*2);
 
-    center = get_temp(thermalData.at<int16_t>(128, 96));
+    center = get_temp(thermalData.at<int16_t>(w/2, h/2));
 
     minmax = std::minmax_element(thermalData.begin<int16_t>(), thermalData.end<int16_t>());
     min = get_temp(*minmax.first);
@@ -63,7 +63,6 @@ int main(int argc, char** argv)
 
     cv::cvtColor(imageData, imageData, cv::COLOR_YUV2BGR_YUYV);
     cv::applyColorMap(imageData, imageData, colorMap);
-    std::cout << "type: "  << imageData.type() << std::endl;
 
     cv::imwrite("out.png", imageData);
     break;
