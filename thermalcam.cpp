@@ -59,6 +59,13 @@ int main(int argc, char** argv)
     std::cout << "center: " << center << " min: " << min << " max: " << max << std::endl;
     std::cout << "min pos: " << minx << "x" << miny << " max pos: " << maxx << "x" << maxy << std::endl;
 
+    double minval, maxval;
+    cv::minMaxLoc(thermalData, &minval, &maxval);
+    min = get_temp(minval);
+    max = get_temp(maxval);
+
+    std::cout << "minMaxIdx: " << "min: " << min << " max: " << max << std::endl;
+
     // cv::resize(imageData, imageData, {w * scale, h * scale});
 
     cv::cvtColor(imageData, imageData, cv::COLOR_YUV2BGR_YUYV);
