@@ -13,7 +13,7 @@ inline double get_temp(int16_t pixel)
   return round2((pixel / 64) - 273.15);
 }
 
-int main(int argc, char** argv)
+int main(int, char**)
 {
   int w, h;
   int scale = 3;

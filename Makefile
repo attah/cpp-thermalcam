@@ -1,4 +1,5 @@
-CXXFLAGS = -std=c++11 $(shell pkg-config --cflags opencv4)
+CXXFLAGS = -std=c++11 -O3 -pedantic -Wall -Wextra -Werror \
+		$(shell pkg-config --cflags opencv4)
 LDFLAGS = $(shell pkg-config --libs opencv4)
 
 all: thermalcam
