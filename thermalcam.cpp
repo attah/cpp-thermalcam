@@ -18,10 +18,10 @@ int main(int argc, char** argv)
   int w, h;
   int scale = 3;
   cv::ColormapTypes colorMap = cv::COLORMAP_JET;
-  float center, min, max;
-  ptrdiff_t minoffs, maxoffs;
-  ptrdiff_t minx, miny, maxx, maxy;
-  std::pair<cv::MatIterator_<int16_t>, cv::MatIterator_<int16_t>> minmax;
+  double min, max, center;
+  double minval, maxval;
+  cv::Point minPoint;
+  cv::Point maxPoint;
   cv::Mat fullFrame;
   cv::Mat imageData;
   cv::Mat thermalData;
@@ -41,25 +41,18 @@ int main(int argc, char** argv)
     h = fullFrame.rows / 2;
 
     imageData = fullFrame.rowRange(0, h);
-    thermalData = fullFrame.rowRange(h, h*2);
+    thermalData = cv::Mat(h, w, CV_16SC1, fullFrame.data + fullFrame.elemSize() * w * h);
 
+    cv::minMaxLoc(thermalData, &minval, &maxval, &minPoint, &maxPoint);
+    min = get_temp(minval);
+    max = get_temp(maxval);
     center = get_temp(thermalData.at<int16_t>(w/2, h/2));
 
-    minmax = std::minmax_element(thermalData.begin<int16_t>(), thermalData.end<int16_t>());
-    min = get_temp(*minmax.first);
-    max = get_temp(*minmax.second);
+    std::cout << "minMaxIdx: " << "min: " << min << " max: " << max << " center: " << center << std::endl;
+    std::cout << "min pos: " << minPoint.x << "x" << minPoint.y
+              << " max pos: " << maxPoint.x << "x" << maxPoint.y << std::endl;
 
-    minoffs = std::distance(thermalData.begin<int16_t>(), minmax.first);
-    maxoffs = std::distance(thermalData.begin<int16_t>(), minmax.second);
-    minx = minoffs % w;
-    miny = minoffs / w;
-    maxx = maxoffs % w;
-    maxy = maxoffs / w;
-
-    std::cout << "center: " << center << " min: " << min << " max: " << max << std::endl;
-    std::cout << "min pos: " << minx << "x" << miny << " max pos: " << maxx << "x" << maxy << std::endl;
-
-    // cv::resize(imageData, imageData, {w * scale, h * scale});
+    cv::resize(imageData, imageData, {w * scale, h * scale});
 
     cv::cvtColor(imageData, imageData, cv::COLOR_YUV2BGR_YUYV);
     cv::applyColorMap(imageData, imageData, colorMap);
