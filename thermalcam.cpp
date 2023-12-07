@@ -81,7 +81,7 @@ int main(int, char**)
     max = get_temp(maxVal);
     center = get_temp(thermalData.at<int16_t>(w/2, h/2));
 
-    std::cout << "minMaxIdx: " << "min: " << min << " max: " << max << " center: " << center << std::endl;
+    std::cout << "min: " << min << " max: " << max << " center: " << center << std::endl;
     std::cout << "min pos: " << minPoint.x << "x" << minPoint.y
               << " max pos: " << maxPoint.x << "x" << maxPoint.y << std::endl;
 
