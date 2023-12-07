@@ -19,7 +19,7 @@ int main(int, char**)
   int scale = 3;
   cv::ColormapTypes colorMap = cv::COLORMAP_JET;
   double min, max, center;
-  double minval, maxval;
+  double minVal, maxVal;
   cv::Point minPoint;
   cv::Point maxPoint;
   cv::Mat fullFrame;
@@ -41,11 +41,11 @@ int main(int, char**)
     h = fullFrame.rows / 2;
 
     imageData = fullFrame.rowRange(0, h);
-    thermalData = cv::Mat(h, w, CV_16SC1, fullFrame.data + fullFrame.elemSize() * w * h);
+    thermalData = cv::Mat(h, w, CV_16SC1, fullFrame.row(h).data);
 
-    cv::minMaxLoc(thermalData, &minval, &maxval, &minPoint, &maxPoint);
-    min = get_temp(minval);
-    max = get_temp(maxval);
+    cv::minMaxLoc(thermalData, &minVal, &maxVal, &minPoint, &maxPoint);
+    min = get_temp(minVal);
+    max = get_temp(maxVal);
     center = get_temp(thermalData.at<int16_t>(w/2, h/2));
 
     std::cout << "minMaxIdx: " << "min: " << min << " max: " << max << " center: " << center << std::endl;
