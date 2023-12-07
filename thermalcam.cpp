@@ -1,7 +1,9 @@
 #include <opencv2/opencv.hpp>
 #include <iostream>
+#include <fstream>
 #include <cstdint>
 #include <algorithm>
+#include <filesystem>
 
 inline double round2(double d)
 {
@@ -25,12 +27,43 @@ int main(int, char**)
   cv::Mat fullFrame;
   cv::Mat imageData;
   cv::Mat thermalData;
+  cv::VideoCapture cap;
 
-  cv::VideoCapture cap("/dev/video0", cv::CAP_V4L);
+  for(std::filesystem::directory_entry const& dir :
+      std::filesystem::directory_iterator("/sys/class/video4linux"))
+  {
+    std::string dirname = dir.path().filename();
+    if(dirname.substr(0, 5) != "video")
+    {
+      continue;
+    }
 
-  if (!cap.isOpened()) {
-      std::cerr << "ERROR: Failed to open camera." << std::endl;
-      return 1;
+    std::filesystem::directory_entry uevent(dir.path() / "device" / "uevent");
+    std::ifstream file(uevent.path());
+    if(file.is_open())
+    {
+      std::string line;
+      while(std::getline(file, line))
+      {
+        if(line.substr(0, 16) == "PRODUCT=bda/5830")
+        {
+          // std::cout << "Trying " << "/dev/" + dirname << std::endl;
+          cap = cv::VideoCapture("/dev/" + dirname, cv::CAP_V4L2);
+          break;
+        }
+      }
+    }
+
+    if(cap.isOpened())
+    {
+      break;
+    }
+  }
+
+  if(!cap.isOpened())
+  {
+    std::cerr << "ERROR: Failed to open camera." << std::endl;
+    return 1;
   }
 
   cap.set(cv::CAP_PROP_CONVERT_RGB, false);
