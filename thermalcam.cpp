@@ -38,8 +38,7 @@ int main(int, char**)
       continue;
     }
 
-    std::filesystem::directory_entry uevent(dir.path() / "device" / "uevent");
-    std::ifstream file(uevent.path());
+    std::ifstream file(dir.path() / "device" / "uevent");
     if(file.is_open())
     {
       std::string line;
