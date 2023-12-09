@@ -1,4 +1,5 @@
 #include <opencv2/opencv.hpp>
+#include <opencv2/highgui.hpp>
 #include <iostream>
 #include <fstream>
 #include <cstdint>
@@ -120,6 +121,8 @@ int main(int, char**)
 
   cap.set(cv::CAP_PROP_CONVERT_RGB, false);
 
+  cv::namedWindow("Thermal");
+
   while(cap.read(fullFrame))
   {
     w = fullFrame.cols;
@@ -133,10 +136,6 @@ int main(int, char**)
     max = get_temp(maxVal);
     center = get_temp(thermalData.at<int16_t>(w/2, h/2));
 
-    std::cout << "min: " << min << " max: " << max << " center: " << center << std::endl;
-    std::cout << "min pos: " << minPoint.x << "x" << minPoint.y
-              << " max pos: " << maxPoint.x << "x" << maxPoint.y << std::endl;
-
     cv::resize(imageData, imageData, {w * scale, h * scale});
     cv::cvtColor(imageData, imageData, cv::COLOR_YUV2BGR_YUYV);
     cv::applyColorMap(imageData, imageData, colorMap);
@@ -145,8 +144,9 @@ int main(int, char**)
     putLabel(imageData, fmt2(min), scale_point(minPoint, scale), scale2, Dot);
     putLabel(imageData, fmt2(max), scale_point(maxPoint, scale), scale2, Dot);
 
-    cv::imwrite("out.png", imageData);
-    break;
+    cv::imshow("Thermal", imageData);
+    cv::waitKey(1);
+    // cv::imwrite("out.png", imageData);
   }
 
   return 0;
