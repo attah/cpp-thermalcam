@@ -139,7 +139,10 @@ int capture_loop(cv::VideoCapture captureDevice, ImageCallback imageCallback)
     putLabel(imageData, fmt2(min), scale_point(minPoint, scale), scale2, Dot);
     putLabel(imageData, fmt2(max), scale_point(maxPoint, scale), scale2, Dot);
 
-    imageCallback(imageData);
+    if(!imageCallback(imageData))
+    {
+      break;
+    }
   }
   return 0;
 }
