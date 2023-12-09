@@ -1,8 +1,5 @@
-#include <opencv2/opencv.hpp>
-#include <opencv2/highgui.hpp>
-#include <iostream>
+#include "thermalcam.h"
 #include <fstream>
-#include <cstdint>
 #include <algorithm>
 #include <filesystem>
 
@@ -68,19 +65,8 @@ void putLabel(cv::InputOutputArray img, const std::string& text, cv::Point point
   cv::putText(img, text, point, cv::FONT_HERSHEY_SIMPLEX, scale, WHITE, 1, cv::LINE_AA);
 }
 
-int main(int, char**)
+cv::VideoCapture find_camera()
 {
-  int w, h;
-  int scale = 3;
-  double scale2 = scale*0.25;
-  cv::ColormapTypes colorMap = cv::COLORMAP_JET;
-  double min, max, center;
-  double minVal, maxVal;
-  cv::Point minPoint;
-  cv::Point maxPoint;
-  cv::Mat fullFrame;
-  cv::Mat imageData;
-  cv::Mat thermalData;
   cv::VideoCapture cap;
 
   for(std::filesystem::directory_entry const& dir :
@@ -113,17 +99,26 @@ int main(int, char**)
     }
   }
 
-  if(!cap.isOpened())
-  {
-    std::cerr << "ERROR: Failed to open camera." << std::endl;
-    return 1;
-  }
+  return cap;
+}
 
-  cap.set(cv::CAP_PROP_CONVERT_RGB, false);
+int capture_loop(cv::VideoCapture captureDevice, ImageCallback imageCallback)
+{
+  int w, h;
+  int scale = 3;
+  double scale2 = scale*0.25;
+  cv::ColormapTypes colorMap = cv::COLORMAP_JET;
+  double min, max, center;
+  double minVal, maxVal;
+  cv::Point minPoint;
+  cv::Point maxPoint;
+  cv::Mat fullFrame;
+  cv::Mat imageData;
+  cv::Mat thermalData;
 
-  cv::namedWindow("Thermal");
+  captureDevice.set(cv::CAP_PROP_CONVERT_RGB, false);
 
-  while(cap.read(fullFrame))
+  while(captureDevice.read(fullFrame))
   {
     w = fullFrame.cols;
     h = fullFrame.rows / 2;
@@ -144,10 +139,7 @@ int main(int, char**)
     putLabel(imageData, fmt2(min), scale_point(minPoint, scale), scale2, Dot);
     putLabel(imageData, fmt2(max), scale_point(maxPoint, scale), scale2, Dot);
 
-    cv::imshow("Thermal", imageData);
-    cv::waitKey(1);
-    // cv::imwrite("out.png", imageData);
+    imageCallback(imageData);
   }
-
   return 0;
 }

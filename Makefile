@@ -7,5 +7,5 @@ all: thermalcam
 %.o: %.cpp
 	$(CXX) -c $(CXXFLAGS) $<
 
-thermalcam: thermalcam.o
+thermalcam: thermalcam.o thermalcam_main.o
 	$(CXX) $^ $(LDFLAGS) -o $@
