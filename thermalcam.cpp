@@ -1,8 +1,8 @@
 #include "thermalcam.h"
 #include <fstream>
+#include <sstream>
 #include <filesystem>
 #include <cstdint>
-#include <charconv>
 
 #define WHITE {0xff, 0xff, 0xff}
 #define BLACK {0x00, 0x00, 0x00}
@@ -21,9 +21,12 @@ inline double get_temp(int16_t pixel)
 
 inline std::string fmt2(double d)
 {
-  char buf[6] = {0};
-  std::to_chars(buf, buf+5, d, std::chars_format::fixed, 2);
-  return std::string(buf);
+  std::stringstream ss;
+  ss.imbue(std::locale("C"));
+  ss.setf(std::ios::fixed);
+  ss.precision(2);
+  ss << d;
+  return ss.str();
 }
 
 inline cv::Point scale_point(cv::Point point, double scale)
