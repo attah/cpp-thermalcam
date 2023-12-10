@@ -114,7 +114,7 @@ bool do_capture(cv::VideoCapture captureDevice, cv::Mat& imageData, int wTarget,
 
   int w = fullFrame.cols;
   int h = fullFrame.rows / 2;
-  double scale = std::min(wTarget/w, hTarget/h);
+  double scale = std::min(wTarget/(double)w, hTarget/(double)h);
 
   imageData = fullFrame.rowRange(0, h);
   cv::Mat thermalData = cv::Mat(h, w, CV_16SC1, fullFrame.row(h).data);
