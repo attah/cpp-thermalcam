@@ -12,13 +12,12 @@ int main(int, char**)
   }
 
   cv::namedWindow("ThermalCam");
+  cv::Mat imageData;
 
-  ImageCallback imageCallback = [](const cv::Mat& imageData)
-                                {
-                                  cv::imshow("ThermalCam", imageData);
-                                  cv::waitKey(1);
-                                  return true;
-                                };
+  while(do_capture(captureDevice, imageData, 640, 480))
+  {
+    cv::imshow("ThermalCam", imageData);
+    cv::waitKey(1);
+  }
 
-  return capture_loop(captureDevice, imageCallback);
 }

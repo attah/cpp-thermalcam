@@ -1,7 +1,7 @@
 #include "thermalcam.h"
 #include <fstream>
-#include <algorithm>
 #include <filesystem>
+#include <cstdint>
 
 #define WHITE {0xff, 0xff, 0xff}
 #define BLACK {0x00, 0x00, 0x00}
@@ -29,7 +29,7 @@ inline std::string fmt2(double d)
   return tmp.substr(0, tmp.find('.') + 3);
 }
 
-inline cv::Point scale_point(cv::Point point, int scale)
+inline cv::Point scale_point(cv::Point point, double scale)
 {
   point.x *= scale;
   point.y *= scale;
@@ -95,6 +95,7 @@ cv::VideoCapture find_camera()
 
     if(cap.isOpened())
     {
+      cap.set(cv::CAP_PROP_CONVERT_RGB, false);
       break;
     }
   }
@@ -102,47 +103,37 @@ cv::VideoCapture find_camera()
   return cap;
 }
 
-int capture_loop(cv::VideoCapture captureDevice, ImageCallback imageCallback)
+bool do_capture(cv::VideoCapture captureDevice, cv::Mat& imageData, int wTarget, int hTarget)
 {
-  int w, h;
-  int scale = 3;
-  double scale2 = scale*0.25;
-  cv::ColormapTypes colorMap = cv::COLORMAP_JET;
-  double min, max, center;
-  double minVal, maxVal;
+  cv::Mat fullFrame;
+
+  if(!captureDevice.read(fullFrame))
+  {
+    return false;
+  }
+
+  int w = fullFrame.cols;
+  int h = fullFrame.rows / 2;
+  double scale = std::min(wTarget/w, hTarget/h);
+
+  imageData = fullFrame.rowRange(0, h);
+  cv::Mat thermalData = cv::Mat(h, w, CV_16SC1, fullFrame.row(h).data);
+
+  double minVal;
+  double maxVal;
   cv::Point minPoint;
   cv::Point maxPoint;
-  cv::Mat fullFrame;
-  cv::Mat imageData;
-  cv::Mat thermalData;
+  cv::minMaxLoc(thermalData, &minVal, &maxVal, &minPoint, &maxPoint);
+  double min = get_temp(minVal);
+  double max = get_temp(maxVal);
+  double center = get_temp(thermalData.at<int16_t>(w/2, h/2));
 
-  captureDevice.set(cv::CAP_PROP_CONVERT_RGB, false);
+  cv::resize(imageData, imageData, {(int)std::round(w * scale), (int)std::round(h * scale)});
+  cv::cvtColor(imageData, imageData, cv::COLOR_YUV2BGR_YUYV);
+  cv::applyColorMap(imageData, imageData, cv::COLORMAP_JET);
 
-  while(captureDevice.read(fullFrame))
-  {
-    w = fullFrame.cols;
-    h = fullFrame.rows / 2;
-
-    imageData = fullFrame.rowRange(0, h);
-    thermalData = cv::Mat(h, w, CV_16SC1, fullFrame.row(h).data);
-
-    cv::minMaxLoc(thermalData, &minVal, &maxVal, &minPoint, &maxPoint);
-    min = get_temp(minVal);
-    max = get_temp(maxVal);
-    center = get_temp(thermalData.at<int16_t>(w/2, h/2));
-
-    cv::resize(imageData, imageData, {w * scale, h * scale});
-    cv::cvtColor(imageData, imageData, cv::COLOR_YUV2BGR_YUYV);
-    cv::applyColorMap(imageData, imageData, colorMap);
-
-    putLabel(imageData, fmt2(center), {imageData.cols/2, imageData.rows/2}, scale2, Crosshair);
-    putLabel(imageData, fmt2(min), scale_point(minPoint, scale), scale2, Dot);
-    putLabel(imageData, fmt2(max), scale_point(maxPoint, scale), scale2, Dot);
-
-    if(!imageCallback(imageData))
-    {
-      break;
-    }
-  }
-  return 0;
+  putLabel(imageData, fmt2(center), {imageData.cols/2, imageData.rows/2}, scale/4, Crosshair);
+  putLabel(imageData, fmt2(min), scale_point(minPoint, scale), scale/4, Dot);
+  putLabel(imageData, fmt2(max), scale_point(maxPoint, scale), scale/4, Dot);
+  return true;
 }
