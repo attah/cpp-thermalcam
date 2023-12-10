@@ -2,6 +2,7 @@
 #include <fstream>
 #include <filesystem>
 #include <cstdint>
+#include <charconv>
 
 #define WHITE {0xff, 0xff, 0xff}
 #define BLACK {0x00, 0x00, 0x00}
@@ -13,20 +14,16 @@ enum LabelMarker
   Crosshair
 };
 
-inline double round2(double d)
-{
-  return round(d*100)/100;
-}
-
 inline double get_temp(int16_t pixel)
 {
-  return round2((pixel / 64) - 273.15);
+  return (pixel / 64) - 273.15;
 }
 
 inline std::string fmt2(double d)
 {
-  std::string tmp = std::to_string(d);
-  return tmp.substr(0, tmp.find('.') + 3);
+  char buf[6] = {0};
+  std::to_chars(buf, buf+5, d, std::chars_format::fixed, 2);
+  return std::string(buf);
 }
 
 inline cv::Point scale_point(cv::Point point, double scale)
