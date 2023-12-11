@@ -16,7 +16,7 @@ enum LabelMarker
 
 inline double get_temp(int16_t pixel)
 {
-  return (pixel / 64) - 273.15;
+  return (pixel / 64.0) - 273.15;
 }
 
 inline std::string fmt2(double d)
