@@ -43,26 +43,26 @@ void putLabel(cv::InputOutputArray img, const std::string& text, cv::Point point
   int xSpacing = 2;
   int ySpacing = 4;
   int baseLine;
-  cv::Size textSize = cv::getTextSize(text, cv::FONT_HERSHEY_SIMPLEX, scale, 2, &baseLine);
+  cv::Size textSize = cv::getTextSize(text, cv::FONT_HERSHEY_SIMPLEX, scale/4, 2, &baseLine);
   cv::Point point = {point0.x - ((point0.x > xMid) ? textSize.width + xSpacing : - xSpacing),
                      point0.y + ((point0.y < yMid) ? textSize.height + ySpacing : - ySpacing)};
 
   if(type == Dot)
   {
-    cv::circle(img, point0, 1, BLACK, 2, cv::LINE_AA);
-    cv::circle(img, point0, 1, WHITE, 1, cv::LINE_AA);
+    cv::circle(img, point0, std::trunc(scale)/2, BLACK, 2, cv::LINE_AA);
+    cv::circle(img, point0, std::trunc(scale)/2, WHITE, 1, cv::LINE_AA);
   }
   else if(type == Crosshair)
   {
-
-    cv::line(img, {xMid, yMid - 10}, {xMid, yMid + 10}, BLACK, 2, cv::LINE_AA);
-    cv::line(img, {xMid - 10, yMid}, {xMid + 10, yMid}, BLACK, 2, cv::LINE_AA);
-    cv::line(img, {xMid, yMid - 10}, {xMid, yMid + 10}, WHITE, 1);
-    cv::line(img, {xMid - 10, yMid}, {xMid + 10, yMid}, WHITE, 1);
+    int iscale = std::trunc(scale) * 2;
+    cv::line(img, {xMid, yMid - iscale}, {xMid, yMid + iscale}, BLACK, 2, cv::LINE_AA);
+    cv::line(img, {xMid - iscale, yMid}, {xMid + iscale, yMid}, BLACK, 2, cv::LINE_AA);
+    cv::line(img, {xMid, yMid - iscale}, {xMid, yMid + iscale}, WHITE, 1);
+    cv::line(img, {xMid - iscale, yMid}, {xMid + iscale, yMid}, WHITE, 1);
   }
 
-  cv::putText(img, text, point, cv::FONT_HERSHEY_SIMPLEX, scale, BLACK, 2, cv::LINE_AA);
-  cv::putText(img, text, point, cv::FONT_HERSHEY_SIMPLEX, scale, WHITE, 1, cv::LINE_AA);
+  cv::putText(img, text, point, cv::FONT_HERSHEY_SIMPLEX, scale/4, BLACK, 2, cv::LINE_AA);
+  cv::putText(img, text, point, cv::FONT_HERSHEY_SIMPLEX, scale/4, WHITE, 1, cv::LINE_AA);
 }
 
 cv::VideoCapture find_camera()
@@ -132,8 +132,8 @@ bool do_capture(cv::VideoCapture captureDevice, cv::Mat& imageData, int wTarget,
   cv::cvtColor(imageData, imageData, cv::COLOR_YUV2BGR_YUYV);
   cv::applyColorMap(imageData, imageData, cv::COLORMAP_JET);
 
-  putLabel(imageData, fmt2(center), {imageData.cols/2, imageData.rows/2}, scale/4, Crosshair);
-  putLabel(imageData, fmt2(min), scale_point(minPoint, scale), scale/4, Dot);
-  putLabel(imageData, fmt2(max), scale_point(maxPoint, scale), scale/4, Dot);
+  putLabel(imageData, fmt2(center), {imageData.cols/2, imageData.rows/2}, scale, Crosshair);
+  putLabel(imageData, fmt2(min), scale_point(minPoint, scale), scale, Dot);
+  putLabel(imageData, fmt2(max), scale_point(maxPoint, scale), scale, Dot);
   return true;
 }
