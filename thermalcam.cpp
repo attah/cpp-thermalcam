@@ -55,10 +55,10 @@ void putLabel(cv::InputOutputArray img, const std::string& text, cv::Point point
   else if(type == Crosshair)
   {
     int iscale = std::trunc(scale) * 2;
-    cv::line(img, {xMid, yMid - iscale}, {xMid, yMid + iscale}, BLACK, 2, cv::LINE_AA);
-    cv::line(img, {xMid - iscale, yMid}, {xMid + iscale, yMid}, BLACK, 2, cv::LINE_AA);
-    cv::line(img, {xMid, yMid - iscale}, {xMid, yMid + iscale}, WHITE, 1);
-    cv::line(img, {xMid - iscale, yMid}, {xMid + iscale, yMid}, WHITE, 1);
+    cv::line(img, {point0.x, point0.y - iscale}, {point0.x, point0.y + iscale}, BLACK, 2, cv::LINE_AA);
+    cv::line(img, {point0.x - iscale, point0.y}, {point0.x + iscale, point0.y}, BLACK, 2, cv::LINE_AA);
+    cv::line(img, {point0.x, point0.y - iscale}, {point0.x, point0.y + iscale}, WHITE, 1);
+    cv::line(img, {point0.x - iscale, point0.y}, {point0.x + iscale, point0.y}, WHITE, 1);
   }
 
   cv::putText(img, text, point, cv::FONT_HERSHEY_SIMPLEX, scale/4, BLACK, 2, cv::LINE_AA);
@@ -126,7 +126,7 @@ bool do_capture(cv::VideoCapture captureDevice, cv::Mat& imageData, int wTarget,
   cv::minMaxLoc(thermalData, &minVal, &maxVal, &minPoint, &maxPoint);
   double min = get_temp(minVal);
   double max = get_temp(maxVal);
-  double center = get_temp(thermalData.at<int16_t>(w/2, h/2));
+  double center = get_temp(thermalData.at<int16_t>(h/2, w/2));
 
   cv::resize(imageData, imageData, {(int)std::round(w * scale), (int)std::round(h * scale)});
   cv::cvtColor(imageData, imageData, cv::COLOR_YUV2BGR_YUYV);
