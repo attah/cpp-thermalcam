@@ -2,6 +2,7 @@
 #include <fstream>
 #include <sstream>
 #include <filesystem>
+#include <set>
 #include <cstdint>
 
 #define WHITE {0xff, 0xff, 0xff}
@@ -68,6 +69,7 @@ void putLabel(cv::InputOutputArray img, const std::string& text, cv::Point point
 cv::VideoCapture find_camera()
 {
   cv::VideoCapture cap;
+  static std::set<std::string> supportedCameras({"bda/5830", "bda/5840"});
 
   for(std::filesystem::directory_entry const& dir :
       std::filesystem::directory_iterator("/sys/class/video4linux"))
@@ -84,7 +86,7 @@ cv::VideoCapture find_camera()
       std::string line;
       while(std::getline(file, line))
       {
-        if(line.substr(0, 16) == "PRODUCT=bda/5830")
+        if(line.substr(0, 8) == "PRODUCT=" && supportedCameras.find(line.substr(8, 8)) != supportedCameras.end())
         {
           // std::cout << "Trying " << "/dev/" + dirname << std::endl;
           cap = cv::VideoCapture("/dev/" + dirname, cv::CAP_V4L2);
