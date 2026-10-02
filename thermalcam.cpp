@@ -66,19 +66,17 @@ void putLabel(cv::InputOutputArray img, const std::string& text, cv::Point point
   cv::putText(img, text, point, cv::FONT_HERSHEY_SIMPLEX, scale/4, WHITE, 1, cv::LINE_AA);
 }
 
-cv::VideoCapture find_camera()
+void ThermalCam::findCamera()
 {
-  cv::VideoCapture cap;
   static std::set<std::string> supportedCameras({"5830", "5840"});
-  struct udev* udev = udev_new();
-  struct udev_enumerate* e = udev_enumerate_new(udev);
+  struct udev_enumerate* e = udev_enumerate_new(_udev);
   udev_enumerate_add_match_subsystem(e, "video4linux");
   udev_enumerate_scan_devices(e);
 
   struct udev_list_entry* entry;
   udev_list_entry_foreach(entry, udev_enumerate_get_list_entry(e))
   {
-    struct udev_device* dev = udev_device_new_from_syspath(udev, udev_list_entry_get_name(entry));
+    struct udev_device* dev = udev_device_new_from_syspath(_udev, udev_list_entry_get_name(entry));
     struct udev_device* usb = udev_device_get_parent_with_subsystem_devtype(dev, "usb", "usb_device");
     if(!usb)
     {
@@ -93,26 +91,23 @@ cv::VideoCapture find_camera()
 
     if((idVendor == "0bda") && supportedCameras.find(idProduct) != supportedCameras.end())
     {
-      cap = cv::VideoCapture(devnode, cv::CAP_V4L2);
-      if(cap.isOpened())
+      _captureDevice = cv::VideoCapture(devnode, cv::CAP_V4L2);
+      if(_captureDevice.isOpened())
       {
-        cap.set(cv::CAP_PROP_CONVERT_RGB, false);
+        _captureDevice.set(cv::CAP_PROP_CONVERT_RGB, false);
         break;
       }
     }
   }
 
   udev_enumerate_unref(e);
-  udev_unref(udev);
-
-  return cap;
 }
 
-bool do_capture(cv::VideoCapture captureDevice, cv::Mat& imageData, int wTarget, int hTarget)
+bool ThermalCam::doCapture(cv::Mat& imageData, int wTarget, int hTarget)
 {
   cv::Mat fullFrame;
 
-  if(!captureDevice.read(fullFrame))
+  if(!_captureDevice.read(fullFrame))
   {
     return false;
   }
@@ -141,4 +136,20 @@ bool do_capture(cv::VideoCapture captureDevice, cv::Mat& imageData, int wTarget,
   putLabel(imageData, fmt2(min), scale_point(minPoint, scale), scale, Dot);
   putLabel(imageData, fmt2(max), scale_point(maxPoint, scale), scale, Dot);
   return true;
+}
+
+ThermalCam::ThermalCam()
+{
+  _udev = udev_new();
+  findCamera();
+}
+
+ThermalCam::~ThermalCam()
+{
+  udev_unref(_udev);
+}
+
+bool ThermalCam::isOk()
+{
+  return _captureDevice.isOpened();
 }

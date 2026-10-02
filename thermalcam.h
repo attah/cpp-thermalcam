@@ -2,6 +2,22 @@
 
 #include <opencv2/opencv.hpp>
 
-cv::VideoCapture find_camera();
 
-bool do_capture(cv::VideoCapture captureDevice, cv::Mat& imageData, int wTarget, int hTarget);
+class ThermalCam
+{
+public:
+  ThermalCam();
+  ~ThermalCam();
+
+  ThermalCam(const ThermalCam&) = delete;
+  ThermalCam& operator=(const ThermalCam&) = delete;
+
+  bool isOk();
+  bool doCapture(cv::Mat& imageData, int wTarget, int hTarget);
+
+private:
+  void findCamera();
+
+  struct udev* _udev;
+  cv::VideoCapture _captureDevice;
+};

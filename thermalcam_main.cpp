@@ -3,9 +3,9 @@
 
 int main(int, char**)
 {
-  cv::VideoCapture captureDevice = find_camera();
+  ThermalCam thermalCam;
 
-  if(!captureDevice.isOpened())
+  if(!thermalCam.isOk())
   {
     std::cerr << "ERROR: Failed to open camera." << std::endl;
     return 1;
@@ -14,7 +14,7 @@ int main(int, char**)
   cv::namedWindow("ThermalCam");
   cv::Mat imageData;
 
-  while(do_capture(captureDevice, imageData, 640, 480))
+  while(thermalCam.doCapture(imageData, 640, 480))
   {
     cv::imshow("ThermalCam", imageData);
     cv::waitKey(1);
