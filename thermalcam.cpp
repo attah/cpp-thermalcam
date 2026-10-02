@@ -1,9 +1,9 @@
 #include "thermalcam.h"
 #include <fstream>
 #include <sstream>
-#include <filesystem>
 #include <set>
 #include <cstdint>
+#include <libudev.h>
 
 #define WHITE {0xff, 0xff, 0xff}
 #define BLACK {0x00, 0x00, 0x00}
@@ -69,38 +69,41 @@ void putLabel(cv::InputOutputArray img, const std::string& text, cv::Point point
 cv::VideoCapture find_camera()
 {
   cv::VideoCapture cap;
-  static std::set<std::string> supportedCameras({"bda/5830", "bda/5840"});
+  static std::set<std::string> supportedCameras({"5830", "5840"});
+  struct udev* udev = udev_new();
+  struct udev_enumerate* e = udev_enumerate_new(udev);
+  udev_enumerate_add_match_subsystem(e, "video4linux");
+  udev_enumerate_scan_devices(e);
 
-  for(std::filesystem::directory_entry const& dir :
-      std::filesystem::directory_iterator("/sys/class/video4linux"))
+  struct udev_list_entry* entry;
+  udev_list_entry_foreach(entry, udev_enumerate_get_list_entry(e))
   {
-    std::string dirname = dir.path().filename();
-    if(dirname.substr(0, 5) != "video")
+    struct udev_device* dev = udev_device_new_from_syspath(udev, udev_list_entry_get_name(entry));
+    struct udev_device* usb = udev_device_get_parent_with_subsystem_devtype(dev, "usb", "usb_device");
+    if(!usb)
     {
+      udev_device_unref(dev);
       continue;
     }
+    std::string idVendor = udev_device_get_sysattr_value(usb, "idVendor");
+    std::string idProduct = udev_device_get_sysattr_value(usb, "idProduct");
+    std::string devnode = udev_device_get_devnode(dev);
 
-    std::ifstream file(dir.path() / "device" / "uevent");
-    if(file.is_open())
+    udev_device_unref(dev);
+
+    if((idVendor == "0bda") && supportedCameras.find(idProduct) != supportedCameras.end())
     {
-      std::string line;
-      while(std::getline(file, line))
+      cap = cv::VideoCapture(devnode, cv::CAP_V4L2);
+      if(cap.isOpened())
       {
-        if(line.substr(0, 8) == "PRODUCT=" && supportedCameras.find(line.substr(8, 8)) != supportedCameras.end())
-        {
-          // std::cout << "Trying " << "/dev/" + dirname << std::endl;
-          cap = cv::VideoCapture("/dev/" + dirname, cv::CAP_V4L2);
-          break;
-        }
+        cap.set(cv::CAP_PROP_CONVERT_RGB, false);
+        break;
       }
     }
-
-    if(cap.isOpened())
-    {
-      cap.set(cv::CAP_PROP_CONVERT_RGB, false);
-      break;
-    }
   }
+
+  udev_enumerate_unref(e);
+  udev_unref(udev);
 
   return cap;
 }
