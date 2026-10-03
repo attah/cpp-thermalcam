@@ -25,5 +25,6 @@ private:
 
   struct udev* _udev;
   cv::VideoCapture _captureDevice;
+  libusb_context* _usb_context;
   libusb_device_handle* _usb_handle = 0;
 };

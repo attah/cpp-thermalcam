@@ -114,7 +114,7 @@ void ThermalCam::findCamera()
       if(_captureDevice.isOpened())
       {
         _captureDevice.set(cv::CAP_PROP_CONVERT_RGB, false);
-        _usb_handle = libusb_open_device_with_vid_pid(nullptr, 0x0bda, stoi(idProduct, 0, 16));
+        _usb_handle = libusb_open_device_with_vid_pid(_usb_context, 0x0bda, stoi(idProduct, 0, 16));
         break;
       }
     }
@@ -161,7 +161,7 @@ bool ThermalCam::doCapture(cv::Mat& imageData, int wTarget, int hTarget)
 ThermalCam::ThermalCam()
 {
   _udev = udev_new();
-  libusb_init(nullptr);
+  libusb_init(&_usb_context);
   findCamera();
 }
 
@@ -171,7 +171,7 @@ ThermalCam::~ThermalCam()
   {
     libusb_close(_usb_handle);
   }
-  libusb_exit(nullptr);
+  libusb_exit(_usb_context);
   udev_unref(_udev);
 }
 
