@@ -7,12 +7,31 @@
 
 #define WHITE {0xff, 0xff, 0xff}
 #define BLACK {0x00, 0x00, 0x00}
+#define B1(B) (uint8_t)(B & 0xff)
+#define B2(B) (uint8_t)((B >> 8) & 0xff)
+#define B3(B) (uint8_t)((B >> 16) & 0xff)
+#define B4(B) (uint8_t)((B >> 24) & 0xff)
 
 enum LabelMarker
 {
   NoMarker,
   Dot,
   Crosshair
+};
+
+#define TPD_PARAMS 0x8514
+
+#define GET 0x0000
+#define SET 0x4000
+
+enum TpdParams
+{
+  Distance = 0, // 1/163.835 m, 0-32767, Distance
+  TU,           // 1 K, 0-1024, Reflection temperature
+  TA,           // 1 K, 0-1024, Atmospheric temperature
+  EMS,          // 1/127, 0-127, Emissivity
+  TAU,          // 1/127, 0-127, Atmospheric transmittance
+  GainSel       // binary, 0-1, Gain select (0=low, 1=high)
 };
 
 inline double get_temp(int16_t pixel)
@@ -95,6 +114,7 @@ void ThermalCam::findCamera()
       if(_captureDevice.isOpened())
       {
         _captureDevice.set(cv::CAP_PROP_CONVERT_RGB, false);
+        _usb_handle = libusb_open_device_with_vid_pid(nullptr, 0x0bda, stoi(idProduct, 0, 16));
         break;
       }
     }
@@ -141,15 +161,75 @@ bool ThermalCam::doCapture(cv::Mat& imageData, int wTarget, int hTarget)
 ThermalCam::ThermalCam()
 {
   _udev = udev_new();
+  libusb_init(nullptr);
   findCamera();
 }
 
 ThermalCam::~ThermalCam()
 {
+  if(_usb_handle)
+  {
+    libusb_close(_usb_handle);
+  }
+  libusb_exit(nullptr);
   udev_unref(_udev);
 }
 
 bool ThermalCam::isOk()
 {
   return _captureDevice.isOpened();
+}
+
+void ThermalCam::setGain(uint16_t gain)
+{
+  if(!_usb_handle)
+  {
+    return;
+  }
+  longUsbCmdWrite(TPD_PARAMS | SET, GainSel, gain);
+}
+
+uint32_t ThermalCam::getGain()
+{
+  if(!_usb_handle)
+  {
+    return 1;
+  }
+  const int len = 2;
+  uint8_t data[len];
+  longUsbCmdRead(TPD_PARAMS | GET, GainSel, data, len);
+  return data[0];
+}
+
+void ThermalCam::longUsbCmdWrite(uint16_t cmd, uint16_t prop, uint32_t v1, uint32_t v2, uint32_t v3)
+{
+  uint8_t data1[8] = {B1(cmd), B2(cmd), B2(prop), B1(prop), B4(v1), B3(v1), B2(v1), B1(v1)};
+  uint8_t data2[8] = {B4(v2), B3(v2), B2(v2), B1(v2), B4(v3), B3(v3), B2(v3), B1(v3)};
+
+  libusb_claim_interface(_usb_handle, 0x9d00 & 0xff);
+  libusb_control_transfer(_usb_handle, 0x41, 0x45, 0x78, 0x9d00, data1, 8, 0);
+  libusb_claim_interface(_usb_handle, 0x1d08 & 0xff);
+  libusb_control_transfer(_usb_handle, 0x41, 0x45, 0x78, 0x1d08, data2, 8, 0);
+  waitUsbReadyOrfailed();
+}
+
+bool ThermalCam::longUsbCmdRead(uint16_t cmd, uint16_t prop, uint8_t* data, int len)
+{
+  longUsbCmdWrite(cmd, prop, 0, 0, 2);
+  libusb_claim_interface(_usb_handle, 0x1d10 & 0xff);
+  int read = libusb_control_transfer(_usb_handle, 0xC1, 0x44, 0x78, 0x1d10, data, len, 0);
+  return read == len;
+}
+
+void ThermalCam::waitUsbReadyOrfailed()
+{
+  uint8_t ret = 0;
+  for(int i=0; i < 5; i++)
+  {
+    libusb_control_transfer(_usb_handle, 0x31, 0x44, 0x78, 0x200, &ret, 1, 1);
+    if((ret & 0x03) == 0 || (ret & 0xfc) != 0)
+    {
+      break;
+    }
+  }
 }

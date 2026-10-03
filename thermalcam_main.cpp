@@ -17,7 +17,17 @@ int main(int, char**)
   while(thermalCam.doCapture(imageData, 640, 480))
   {
     cv::imshow("ThermalCam", imageData);
-    cv::waitKey(1);
+    switch(cv::waitKey(1))
+    {
+      case 'l':
+        thermalCam.setGain(0);
+        break;
+      case 'h':
+        thermalCam.setGain(1);
+        break;
+      default:
+        break;
+    }
   }
 
 }
