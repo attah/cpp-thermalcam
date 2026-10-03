@@ -198,7 +198,7 @@ uint32_t ThermalCam::getGain()
   const int len = 2;
   uint8_t data[len];
   longUsbCmdRead(TPD_PARAMS | GET, GainSel, data, len);
-  return data[0];
+  return data[1];
 }
 
 void ThermalCam::longUsbCmdWrite(uint16_t cmd, uint16_t prop, uint32_t v1, uint32_t v2, uint32_t v3)
